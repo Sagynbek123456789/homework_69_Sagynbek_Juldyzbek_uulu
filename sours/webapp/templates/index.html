@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+
+    <h1>Simple Calculator</h1>
+
+    <input type="number" id="inputA" placeholder="Enter number A">
+    <input type="number" id="inputB" placeholder="Enter number B">
+
+    <button onclick="performOperation('add')">Add</button>
+    <button onclick="performOperation('subtract')">Subtract</button>
+    <button onclick="performOperation('multiply')">Multiply</button>
+    <button onclick="performOperation('divide')">Divide</button>
+
+    <div id="result"></div>
+
+    <script>
+        function performOperation(operation) {
+            var A = $('#inputA').val();
+            var B = $('#inputB').val();
+
+
+            A = parseFloat(A);
+            B = parseFloat(B);
+
+            if (isNaN(A) || isNaN(B)) {
+                $('#result').css('color', 'red').text('Error: Please enter valid numeric values.');
+                return;
+            }
+
+            var csrftoken = document.cookie.match(/csrftoken=([\w-]+)/)[1];
+
+            var url = '';
+            if (operation === 'add') {
+                url = '{% url "calculator:add_view" %}';
+            } else if (operation === 'subtract') {
+                url = '{% url "calculator:subtract_view" %}';
+            } else if (operation === 'multiply') {
+                url = '{% url "calculator:multiply_view" %}';
+            } else if (operation === 'divide') {
+                url = '{% url "calculator:divide_view" %}';
+            }
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ 'A': A, 'B': B }),
+                beforeSend: function(xhr, settings) {
+
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                },
+                success: function(response) {
+                    $('#result').css('color', 'green').text('Result: ' + response.answer);
+                },
+                error: function(error) {
+                    $('#result').css('color', 'red').text('Error: ' + error.responseJSON.error);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
