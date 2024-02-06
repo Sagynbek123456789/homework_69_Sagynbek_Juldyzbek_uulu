@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <label for="A">Число А: </label>
+        <input type="number" name="A" id="A">
+        
+        <label for="B">Число B: </label>
+        <input type="number" name="B" id="B">
+    </div>
+    <div style="margin-top: 10px">
+        <button class="action" type="button" data-url="{% url 'calculator:add' %}">add</button>
+        <button class="action" type="button" data-url="{% url 'calculator:multiply' %}">multiply</button>
+        <button class="action" type="button" data-url="{% url 'calculator:divide' %}">divide</button>
+        <button class="action" type="button" data-url="{% url 'calculator:subtract' %}">subtract</button>
+    </div>
+    <p id="result">
+
+    </p>
+
+<script>
+    const p = document.getElementById('result');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+
+    async function makeRequest(url, method = 'GET', body){
+        let headers = {};
+        if (method !== "GET"){
+            const csrftoken = getCookie('csrftoken');
+            headers['X-CSRFToken'] = csrftoken;
+        }
+        if (body){
+            body = JSON.stringify(body)
+        }
+
+        let response = await fetch(url, {method, headers, body});
+
+        if (response.ok){
+            return await response.json();
+        } else {
+            let error = new Error(response.statusText);
+            error.response = response;
+            throw error;
+        }
+    }
+
+    async function onClick(e){
+        e.preventDefault()
+        let url = e.target.dataset['url'];
+        let data = {
+            "A": document.getElementById('A').value,
+            "B": document.getElementById('B').value,
+        }
+        try {
+            let response = await makeRequest(url, "POST", data);
+            p.innerText = response.answer;
+            p.style.color = 'green';
+        } catch (e){
+            p.style.color = 'red';
+            if(e.response.status === 400) {
+                let { error } = await e.response.json();
+                p.innerText = error;
+            } else {
+                p.innerText = "что то пошло не так";
+            }
+        }
+    }
+
+    for(el of document.getElementsByClassName('action')) {
+        el.addEventListener('click', onClick);
+    }
+
+
+</script>
+
+</body>
+</html> 
